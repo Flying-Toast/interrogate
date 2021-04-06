@@ -2,8 +2,18 @@ use rand::{seq::SliceRandom, thread_rng};
 use std::collections::HashMap;
 use std::io::{self, Write};
 
+macro_rules! flushed_print {
+    ($($arg:tt)*) => {
+        print!(
+            "{}",
+            format_args!($($arg)*),
+        );
+        io::stdout().flush().unwrap();
+    }
+}
+
 fn clear_screen() {
-    print!("\x1B[2J\x1B[1;1H");
+    flushed_print!("\x1B[2J\x1B[1;1H");
 }
 
 fn wait_for_enter() {
@@ -16,16 +26,6 @@ fn read_line() -> String {
     // remove newline
     buf.pop();
     buf
-}
-
-macro_rules! flushed_print {
-    ($($arg:tt)*) => {
-        print!(
-            "{}",
-            format_args!($($arg)*),
-        );
-        io::stdout().flush().unwrap();
-    }
 }
 
 type PlayerID = u8;
@@ -108,8 +108,15 @@ impl Game {
             flushed_print!("=> Press <ENTER> to start round {}", round);
             wait_for_enter();
             self.pend_questions();
-            dbg!(self.input_answers());
-            loop{}
+            flushed_print!("=> Press <ENTER> to start answering");
+            wait_for_enter();
+            let answers = self.input_answers();
+            flushed_print!("=> Press <ENTER> to start guessing");
+            wait_for_enter();
+            for answered in answers {
+                println!("=> Question:\n\t{}", answered.question.prompt);
+                println!("=> Response:\n\t{}", answered.answer);
+            }
         }
     }
 
@@ -124,6 +131,7 @@ impl Game {
             let response = read_line();
             answers.push(pending_q.respond(p, response));
         }
+        clear_screen();
         answers
     }
 
@@ -143,6 +151,8 @@ impl Game {
             let responder = pairs.get(&p).unwrap();
             self.players.get_mut(&responder).unwrap()
                 .question_pending_answer = Some(question);
+
+            clear_screen();
         }
     }
 
