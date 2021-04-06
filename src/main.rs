@@ -121,6 +121,8 @@ impl Game {
     fn do_guesses(&self, answers: &[AnsweredQuestion]) {
         for answered_q in answers {
             clear_screen();
+            // tuple is (&guesser, guess)
+            let mut guesses: Vec<(&Player, PlayerID)> = Vec::new();
             println!("=> Question:\n\t{}", answered_q.question.prompt);
             println!("=> Response:\n\t{}", answered_q.answer);
             println!();
@@ -130,20 +132,19 @@ impl Game {
             for player in sorted_players {
                 println!("{:2}: {}", player.id, player.nickname);
             }
-            for p in self.player_ids() {
-                let nickname = &self.players.get(&p).unwrap().nickname;
-                if p == answered_q.answered_by {
-                    println!("(pretend you don't see this) skipping {} because they are the answerer", nickname);
+            for player in self.players.values() {
+                if player.id == answered_q.answered_by {
+                    println!("(pretend you don't see this) skipping {} because they are the answerer", player.nickname);
                     continue;
                 }
-                println!("=> {}, who do you think wrote this answer? Enter an ID from above.", nickname);
-                let guessed_answerer: PlayerID;
+                println!("=> {}, who do you think wrote this answer? Enter an ID from above.", player.nickname);
+                let guess: PlayerID;
                 loop {
-                    flushed_print!("{}'s guess: ", nickname);
+                    flushed_print!("{}'s guess: ", player.nickname);
                     let input = read_line();
                     match input.parse() {
                         Ok(id) if self.players.contains_key(&id) => {
-                            guessed_answerer = id;
+                            guess = id;
                             break;
                         },
                         _ => {
@@ -151,13 +152,21 @@ impl Game {
                         },
                     }
                 }
-                if guessed_answerer == answered_q.answered_by {
-                    println!("(correct)");
+                guesses.push((player, guess));
+            }
+            flushed_print!("=> Guessing done. Press <ENTER> to see the results.");
+            wait_for_enter();
+            let answerer = self.players.get(&answered_q.answered_by).unwrap();
+            println!("=> **{}** was the one who answered the question.", answerer.nickname);
+            for (guesser, guessed_id) in guesses {
+                if guessed_id == answered_q.answered_by {
+                    println!("=> {} was CORRECT", guesser.nickname);
+                    //TODO: score
                 } else {
-                    println!("(wrong)");
+                    println!("=> {} was INCORRECT", guesser.nickname);
                 }
             }
-            flushed_print!("=> Everyone guessed. Press <ENTER> to continue");
+            flushed_print!("=> Press <ENTER> continue.");
             wait_for_enter();
         }
     }
