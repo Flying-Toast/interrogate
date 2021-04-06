@@ -113,10 +113,52 @@ impl Game {
             let answers = self.input_answers();
             flushed_print!("=> Press <ENTER> to start guessing");
             wait_for_enter();
-            for answered in answers {
-                println!("=> Question:\n\t{}", answered.question.prompt);
-                println!("=> Response:\n\t{}", answered.answer);
+            clear_screen();
+            self.do_guesses(&answers);
+        }
+    }
+
+    fn do_guesses(&self, answers: &[AnsweredQuestion]) {
+        for answered_q in answers {
+            clear_screen();
+            println!("=> Question:\n\t{}", answered_q.question.prompt);
+            println!("=> Response:\n\t{}", answered_q.answer);
+            println!();
+            println!("=> IDs:");
+            let mut sorted_players: Vec<_> = self.players.values().collect();
+            sorted_players.sort_by(|a, b| a.id.cmp(&b.id));
+            for player in sorted_players {
+                println!("{:2}: {}", player.id, player.nickname);
             }
+            for p in self.player_ids() {
+                let nickname = &self.players.get(&p).unwrap().nickname;
+                if p == answered_q.answered_by {
+                    println!("(pretend you don't see this) skipping {} because they are the answerer", nickname);
+                    continue;
+                }
+                println!("=> {}, who do you think wrote this answer? Enter an ID from above.", nickname);
+                let guessed_answerer: PlayerID;
+                loop {
+                    flushed_print!("{}'s guess: ", nickname);
+                    let input = read_line();
+                    match input.parse() {
+                        Ok(id) if self.players.contains_key(&id) => {
+                            guessed_answerer = id;
+                            break;
+                        },
+                        _ => {
+                            println!("=> You need to enter an ID from the list.");
+                        },
+                    }
+                }
+                if guessed_answerer == answered_q.answered_by {
+                    println!("(correct)");
+                } else {
+                    println!("(wrong)");
+                }
+            }
+            flushed_print!("=> Everyone guessed. Press <ENTER> to continue");
+            wait_for_enter();
         }
     }
 
