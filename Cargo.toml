@@ -1,5 +1,5 @@
 [package]
-name = "game"
+name = "interrogate"
 version = "0.1.0"
 authors = ["Flying-Toast"]
 edition = "2018"
