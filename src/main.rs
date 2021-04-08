@@ -94,12 +94,10 @@ impl Game {
         self.players.keys().cloned().collect()
     }
 
-    fn add_new_player(&mut self, nickname: String) -> PlayerID {
+    fn add_new_player(&mut self, nickname: String) {
         let id = self.next_player_id;
         self.next_player_id += 1;
         self.players.insert(id, Player::new(id, nickname));
-
-        id
     }
 
     fn start(&mut self) {
@@ -245,10 +243,8 @@ impl Game {
 
 fn main() {
     let mut game = Game::new();
-
-    let mut player_handles = Vec::new();
     for &name in &["Joe", "Bob", "Fred"] {
-        player_handles.push(game.add_new_player(name.into()));
+        game.add_new_player(name.into());
     }
     game.start();
 }
