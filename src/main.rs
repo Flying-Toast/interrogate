@@ -116,13 +116,26 @@ impl Game {
             clear_screen();
             self.do_guesses(&answers);
         }
+        clear_screen();
+        self.show_final_scores();
     }
 
-    fn do_guesses(&self, answers: &[AnsweredQuestion]) {
+    fn show_final_scores(&self) {
+        let mut players: Vec<_> = self.players.values().collect();
+        players.sort_by(|a, b| b.score.cmp(&a.score));
+        let max_nickname_len = players.iter().max_by(|a, b| a.nickname.len().cmp(&b.nickname.len())).unwrap().nickname.len();
+        println!("=> Final scores:");
+        for player in &players {
+            let padded_nickname = format!("{}{}", player.nickname, " ".repeat(max_nickname_len - player.nickname.len()));
+            println!("{}: {} points", padded_nickname, player.score);
+        }
+    }
+
+    fn do_guesses(&mut self, answers: &[AnsweredQuestion]) {
         for answered_q in answers {
             clear_screen();
-            // tuple is (&guesser, guess)
-            let mut guesses: Vec<(&Player, PlayerID)> = Vec::new();
+            // tuple is (guesser, guess)
+            let mut guesses: Vec<(PlayerID, PlayerID)> = Vec::new();
             println!("=> Question:\n\t{}", answered_q.question.prompt);
             println!("=> Response:\n\t{}", answered_q.answer);
             println!();
@@ -152,18 +165,21 @@ impl Game {
                         },
                     }
                 }
-                guesses.push((player, guess));
+                guesses.push((player.id, guess));
             }
             flushed_print!("=> Guessing done. Press <ENTER> to see the results.");
             wait_for_enter();
             let answerer = self.players.get(&answered_q.answered_by).unwrap();
             println!("=> **{}** was the one who answered the question.", answerer.nickname);
-            for (guesser, guessed_id) in guesses {
+            for (guesser_id, guessed_id) in guesses {
+                let guesser = self.players.get_mut(&guesser_id).unwrap();
                 if guessed_id == answered_q.answered_by {
-                    println!("=> {} was CORRECT", guesser.nickname);
-                    //TODO: score
+                    let points = 1;
+                    println!("=> {} was CORRECT. +{} points.", guesser.nickname, points);
+                    //TODO: bonus if the asker is the only one who guessed correctly
+                    guesser.score += points;
                 } else {
-                    println!("=> {} was INCORRECT", guesser.nickname);
+                    println!("=> {} was INCORRECT.", guesser.nickname);
                 }
             }
             flushed_print!("=> Press <ENTER> continue.");
