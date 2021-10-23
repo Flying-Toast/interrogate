@@ -243,8 +243,14 @@ impl Game {
 
 fn main() {
     let mut game = Game::new();
-    for &name in &["Joe", "Bob", "Fred"] {
-        game.add_new_player(name.into());
+    loop {
+        flushed_print!("Who's playing? Enter your name then press enter (or press enter if there are no more players to add): ");
+        let line = read_line();
+        if line == "" {
+            break;
+        } else {
+            game.add_new_player(line);
+        }
     }
     game.start();
 }
